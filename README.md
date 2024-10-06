@@ -1,0 +1,1 @@
+Retrieves Brawl Stars events every day. Credits to [Brawlify](https://brawlify.com/).
