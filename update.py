@@ -1,6 +1,6 @@
 import requests
 import json
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 import os
@@ -25,18 +25,18 @@ class Environment(BaseModel):
     hash: str
     path: str
     version: int
-    imageUrl: HttpUrl
+    imageUrl: str
 
 
 class GameMode(BaseModel):
-    id: int
+    id: Optional[int] = None
     name: str
     hash: str
     version: int
     color: str
     bgColor: str
-    link: HttpUrl
-    imageUrl: HttpUrl
+    link: str
+    imageUrl: str
 
 
 class Stat(BaseModel):
@@ -52,9 +52,9 @@ class Map(BaseModel):
     name: str
     hash: str
     version: int
-    link: HttpUrl
-    imageUrl: HttpUrl
-    credit: str
+    link: str
+    imageUrl: str
+    credit: Optional[str]
     environment: Environment
     gameMode: GameMode
     lastActive: int
@@ -66,11 +66,16 @@ class Map(BaseModel):
 class Event(BaseModel):
     slot: Slot
     predicted: bool
-    startTime: datetime
-    endTime: datetime
+    startTime: str
+    endTime: str
     reward: int
     map: Map
     modifier: Optional[str]
+
+
+class Events(BaseModel):
+    active: List[Event]
+    upcoming: List[Event]
 
 
 def update_maps(s: requests.Session) -> None:
@@ -78,13 +83,17 @@ def update_maps(s: requests.Session) -> None:
     dir = f"{today.year}/{today.month}"
 
     events_data = s.get("https://api.brawlify.com/v1/events")
-    events = [Event.model_validate(e) for e in events_data]
 
     if not os.path.isdir(dir):
         os.makedirs(dir)
 
-    with open(f"{dir}/{today.day}", "w") as f:
-        json.dump([e.model_dump() for e in events], f, indent=4)
+    with open(f"{dir}/{today.day}.json", "w", encoding="utf-8") as f:
+        json.dump(
+            Events.model_validate(events_data.json()).model_dump(),
+            f,
+            indent=4,
+            ensure_ascii=False,
+        )
 
 
 if __name__ == "__main__":
