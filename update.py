@@ -95,6 +95,21 @@ def update_maps(s: requests.Session) -> None:
             ensure_ascii=False,
         )
 
+    # Merge all files in the month
+    merged_data = {}
+
+    for filename in os.listdir(dir):
+        if filename.endswith(".json"):
+            day = os.path.splitext(filename)[0]
+
+            with open(f"{dir}/{filename}", "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            merged_data[day] = data
+
+    with open(f"{dir}/{today.strftime('%B').lower()}.json", "w", encoding="utf-8") as f:
+        json.dump(merged_data, f, ensure_ascii=False)
+
 
 if __name__ == "__main__":
     s = requests.Session()
