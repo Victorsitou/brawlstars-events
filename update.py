@@ -2,7 +2,7 @@ import requests
 import json
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 
 # Pydantic models are here just in case I need to modify something in the future.
@@ -79,7 +79,7 @@ class Events(BaseModel):
 
 
 def update_maps(s: requests.Session) -> None:
-    today = datetime.today()
+    today = datetime.now(timezone.utc).replace(microsecond=0)
     dir = f"{today.year}/{today.month}"
 
     events_data = s.get("https://api.brawlify.com/v1/events")
@@ -96,16 +96,16 @@ def update_maps(s: requests.Session) -> None:
         )
 
     # Merge all files in the month
-    merged_data = {}
+    merged_data = {"data": {}, "lastUpdate": today.isoformat()}
 
     for filename in os.listdir(dir):
-        if filename.endswith(".json"):
+        if filename.endswith(".json") and os.path.splitext(filename)[0].isnumeric():
             day = os.path.splitext(filename)[0]
 
             with open(f"{dir}/{filename}", "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            merged_data[day] = data
+            merged_data["data"][day] = data
 
     with open(f"{dir}/{today.strftime('%B').lower()}.json", "w", encoding="utf-8") as f:
         json.dump(merged_data, f, ensure_ascii=False)

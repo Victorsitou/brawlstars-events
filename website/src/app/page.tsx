@@ -1,29 +1,35 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import {fetcher} from "@public-src" ;
+import {fetcher} from "@public-src";
 import useSWR from 'swr';
-import lightenColor from "./utils"
 import moment from "moment"
 
 import Stack from '@mui/material/Stack';
 import BoxWithIcon from './components/BoxWithIcon';
 import Button from "@mui/material/Button"
 import Box from "@mui/material/Box"
+import Link from "@mui/material/Link"
 
-function getGameModes(events) {
-	const gameModesMap = new Map();
+import { Events, Event, GameMode, GameModeAPI } from './types/types';
+import lightenColor from "./utils"
 
-	for(const dia in events){
-		events[dia].active.forEach(event => {
-			const gameMode = event.map.gameMode;
-			if (gameMode && !gameModesMap.has(gameMode.id)) {
-				gameModesMap.set(gameMode.id, gameMode);
-			}
-		});
-	}
-  
-	return [...gameModesMap.values()];
+interface EventsPerDay {
+	[key: string]: Events
+}
+
+interface EventsData {
+	data: EventsPerDay;
+	lastUpdate: string
+}
+
+function useGameModes(shouldFetch: boolean) {
+	const {data, error, isLoading} = useSWR(
+		shouldFetch ? ["https://api.brawlify.com/v1/gamemodes", {method: "GET",}] : null, 
+		([url, options]: [string, RequestInit]) => fetcher(url, options)
+	)
+
+	return {data}
 }
 
 function getURL() {
@@ -31,12 +37,12 @@ function getURL() {
 	const year = today.getFullYear()
 	const monthNumber = today.getMonth() + 1
 	const monthName = today.toLocaleString('default', { month: 'long' }).toLowerCase()
-	return `https://raw.githubusercontent.com/Victorsitou/brawlstars-events/refs/heads/web/${year}/${monthNumber}/${monthName}.json`;
+	return `https://raw.githubusercontent.com/Victorsitou/brawlstars-events/refs/heads/web-2/${year}/${monthNumber}/${monthName}.json`;
 }
 
 export default function Home() {
 	const [shouldFetchEvents, setShouldFetchEvents] = useState<boolean>(true)
-	const [events, setEvents] = useState([])
+	const [events, setEvents] = useState<EventsData>({data: {}, lastUpdate: ""})
 	const {data: eventsData, error: eventsError, isLoading: eventsIsLoading} = useSWR(
 		shouldFetchEvents
 		? [getURL(), {
@@ -51,25 +57,34 @@ export default function Home() {
 		setShouldFetchEvents(false);
 	}
 
+	const [shouldFetchGameModes, setShouldFetchGameModes] = useState<boolean>(true)
+	const [gameModes, setGameModes] = useState<GameModeAPI[]>([])
+	const {data: gameModesData} = useGameModes(shouldFetchGameModes)
+	if (gameModesData) {
+		setGameModes(gameModesData["list"])
+		setShouldFetchGameModes(false)
+	}
 
-	const groupedGameMode = getGameModes(events).reduce((result, item, index) => {
+	console.log(gameModes)
+
+	const groupedGameMode: GameModeAPI[][] = gameModes.reduce((result, item, index) => {
 		if (index % 2 === 0) {
 		  result.push([item]);
 		} else {
 		  result[result.length - 1].push(item);
 		}
 		return result;
-	}, [])
+	}, [] as GameModeAPI[][])
 	
 
-	const [selectedGameMode, setSelectedGameMode] = useState(null)
-	const [selectedGameModeEvents, setSelectedGameModeEvents] = useState([])
+	const [selectedGameMode, setSelectedGameMode] = useState<string>("")
+	const [selectedGameModeEvents, setSelectedGameModeEvents] = useState<Event[]>([])
 	useEffect(() => {
 		if (selectedGameMode) {
-			const eventsGameMode = []
-			for(const dia in events) {
-				events[dia].active.forEach(activeEvent => {
-					if (activeEvent.map.gameMode.id == selectedGameMode) {
+			const eventsGameMode: Event[] = []
+			for(const dia in events.data) {
+				events.data[dia].active.forEach(activeEvent => {
+					if (activeEvent.map.gameMode.hash == selectedGameMode) {
 						eventsGameMode.push(activeEvent)
 					}
 				});
@@ -82,8 +97,12 @@ export default function Home() {
 
 	return (
 		<>
-			<h1 style={{marginTop: "25vh", marginBottom: "5vh", textAlign: "center"}}>Welcome to Brawl Stars Events.</h1>
-			{selectedGameMode === null
+			<div style={{marginTop: "6vh", marginBottom: "5vh", textAlign: "center"}}>
+				<h1>Welcome to Brawl Stars Events.</h1>
+				<p>Please be aware that events could not be up to date.</p>
+				<p>Last update: {moment(events.lastUpdate).format("D-M-YYYY HH:mm")}</p>
+			</div>
+			{selectedGameMode === ""
 			? <div style={{
 				display: "flex",
 				justifyContent: "center",
@@ -111,7 +130,7 @@ export default function Home() {
 									typographySX={{
 										fontSize: "20px"
 									}}
-									onClick={() => {setSelectedGameMode(gameMode.id)}}
+									onClick={() => {setSelectedGameMode(gameMode.hash)}}
 								/>
 							))}
 						</Stack>
@@ -124,11 +143,12 @@ export default function Home() {
 				justifyItems: "center"
 				}}>
 					<Stack spacing={2}>
-						<Button variant="contained" onClick={() => {setSelectedGameMode(null)}}>Back</Button>
+						<Button variant="contained" onClick={() => {setSelectedGameMode("")}}>Back</Button>
 						{selectedGameModeEvents.map((event, index) => (
 							<Box>
 								<Stack direction="row">
-									<p>{event.map.name} - {moment(event.startTime).format("D-M-YYYY HH:mm")} to {moment(event.endTime).format("D-M-YYYY HH:mm")}</p>
+									<Link href={event.map.link} target="_blank" rel="noopener noreferrer">{event.map.name} </Link>
+									<p>&nbsp;- {moment(event.startTime).format("D-M-YYYY HH:mm")} to {moment(event.endTime).format("D-M-YYYY HH:mm")}</p>
 								</Stack>
 							</Box>
 						))}

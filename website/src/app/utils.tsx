@@ -1,4 +1,4 @@
-export default function lightenColor(hex, percent) {
+export default function lightenColor(hex: string, percent: number) {
     hex = hex.replace(/^#/, '');
   
     let r = parseInt(hex.substring(0, 2), 16);
