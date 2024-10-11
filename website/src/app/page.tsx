@@ -37,7 +37,7 @@ function getURL() {
 	const year = today.getFullYear()
 	const monthNumber = today.getMonth() + 1
 	const monthName = today.toLocaleString('default', { month: 'long' }).toLowerCase()
-	return `https://raw.githubusercontent.com/Victorsitou/brawlstars-events/refs/heads/web-2/${year}/${monthNumber}/${monthName}.json`;
+	return `https://raw.githubusercontent.com/Victorsitou/brawlstars-events/refs/heads/master/${year}/${monthNumber}/${monthName}.json`;
 }
 
 export default function Home() {
