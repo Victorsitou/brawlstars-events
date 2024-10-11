@@ -11,7 +11,7 @@ import Button from "@mui/material/Button"
 import Box from "@mui/material/Box"
 import Link from "@mui/material/Link"
 
-import { Events, Event, GameMode, GameModeAPI } from './types/types';
+import { Events, Event, GameModeAPI } from './types/types';
 import lightenColor from "./utils"
 
 interface EventsPerDay {
@@ -24,7 +24,7 @@ interface EventsData {
 }
 
 function useGameModes(shouldFetch: boolean) {
-	const {data, error, isLoading} = useSWR(
+	const {data, error: _error, isLoading: _isLoading} = useSWR(
 		shouldFetch ? ["https://api.brawlify.com/v1/gamemodes", {method: "GET",}] : null, 
 		([url, options]: [string, RequestInit]) => fetcher(url, options)
 	)
@@ -43,7 +43,7 @@ function getURL() {
 export default function Home() {
 	const [shouldFetchEvents, setShouldFetchEvents] = useState<boolean>(true)
 	const [events, setEvents] = useState<EventsData>({data: {}, lastUpdate: ""})
-	const {data: eventsData, error: eventsError, isLoading: eventsIsLoading} = useSWR(
+	const {data: eventsData, error: _eventsError, isLoading: _eventsIsLoading} = useSWR(
 		shouldFetchEvents
 		? [getURL(), {
 			method: "GET",
@@ -115,7 +115,8 @@ export default function Home() {
 					{groupedGameMode.map((group, index) => (
 						<Stack key={index} direction="row" spacing={2}>
 							{group.map((gameMode, i) => (
-								<BoxWithIcon 
+								<BoxWithIcon
+									key={i}
 									iconUrl={gameMode.imageUrl} 
 									text={gameMode.name} 
 									boxSx={{
@@ -145,8 +146,8 @@ export default function Home() {
 					<Stack spacing={2}>
 						<Button variant="contained" onClick={() => {setSelectedGameMode("")}}>Back</Button>
 						{selectedGameModeEvents.length > 0 
-						? selectedGameModeEvents.map((event, index) => (
-							<Box>
+						? selectedGameModeEvents.map((event, i) => (
+							<Box key={i}>
 								<Stack direction="row">
 									<Link href={event.map.link} target="_blank" rel="noopener noreferrer">{event.map.name} </Link>
 									<p>&nbsp;- {moment(event.startTime).format("D-M-YYYY HH:mm")} to {moment(event.endTime).format("D-M-YYYY HH:mm")}</p>

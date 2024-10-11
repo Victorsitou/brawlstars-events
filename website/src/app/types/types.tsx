@@ -72,7 +72,7 @@ export interface EventMap {
     lastActive: number;
     dataUpdated: number;
     stats: Stat[];
-    teamStats: (null | any)[]; // TBD
+    teamStats: (null)[]; // TBD
 }
 
 export interface Event {
