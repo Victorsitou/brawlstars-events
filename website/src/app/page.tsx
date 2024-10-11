@@ -144,14 +144,16 @@ export default function Home() {
 				}}>
 					<Stack spacing={2}>
 						<Button variant="contained" onClick={() => {setSelectedGameMode("")}}>Back</Button>
-						{selectedGameModeEvents.map((event, index) => (
+						{selectedGameModeEvents.length > 0 
+						? selectedGameModeEvents.map((event, index) => (
 							<Box>
 								<Stack direction="row">
 									<Link href={event.map.link} target="_blank" rel="noopener noreferrer">{event.map.name} </Link>
 									<p>&nbsp;- {moment(event.startTime).format("D-M-YYYY HH:mm")} to {moment(event.endTime).format("D-M-YYYY HH:mm")}</p>
 								</Stack>
 							</Box>
-						))}
+						))
+						: <p>No data is available.</p>}
 					</Stack>
 			   </div>
 			}
